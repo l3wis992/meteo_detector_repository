@@ -4,9 +4,11 @@
 const int chipSelect = BUILTIN_SDCARD; //declare SD socket
 
 //methods:
-// testWrite(char 'type, int testLength)
+// testWrite(char 'type', int testLength, bool 'testRead')
 // type is a character, 'L', 'I', 'C' for Long, Integer or Character.
 // testlength is # of cycles
+// testRead will run a read speed test
+// returns total time for test.
 
 File newFile;
 int testLength = 500;
@@ -16,56 +18,11 @@ void setup() {
   while (!Serial) {
     ; //wait for serial port
   }
-  long randLong = random();
-
-  newFile = SD.open("test2.txt", FILE_WRITE);
-
-  if (newFile) {
-    Serial.println("Writing Long...");
-    for (int i = 0; i < testLength; i++) {
-      newFile.print(randLong);
-    }
-
-
-    newFile.print("int: ");
-    long intPre = micros();
-    //    newFile.println(intTest);
-    long intPost = micros();
-
-
-    newFile.print("long: ");
-    long longPre = micros();
-    //    newFile.println(longTest);
-    long longPost = micros();
-
-    Serial.print("Int time: ");
-    long intDiff = intPost - intPre;
-    Serial.println(intDiff);
-    Serial.print("Long time: ");
-    long longDiff = longPost - longPre;
-    Serial.println(longDiff);
-
-    newFile.close();
-    Serial.println("Written and Closed.");
-  } else {
-    Serial.println("Cannot Open");
-  }
-
-
-  newFile = SD.open("test2.txt");
-  if (newFile) {
-    Serial.println("test2.txt:");
-
-    // read from the file until there's nothing else in it:
-    while (newFile.available()) {
-      Serial.write(newFile.read());
-    }
-    // close the file:
-    newFile.close();
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
-  }
+  SDinit();
+  testWrite('L', 5000, false);
+  testWrite('I', 5000, false);
+  testWrite('D', 5000, false);
+  testWrite('C', 5000, false);
 
 }
 
@@ -75,33 +32,99 @@ void loop() {
 }
 
 void SDinit() {
-  Serial.print("Initialising . . .");
+  Serial.print("Initialising SD write test V0.1 . . .");
 
   if (SD.begin(chipSelect)) {
     Serial.println("Succeeded");
-  } else
-    Serial.println("Failed");
-
+  } else {
+    Serial.println("Failed - Aborting");
+    while (true);
+  }
 }
 
-long testWrite(char type, int testLength) {
-  switch (type) {
-    case 'L':
-        // etc
-        break;
-    case 'I':
-        //etc
-        break;
-    case 'C':
-        //etc
-        break;
-    default:
-        // etc
-        break;
+long testWrite(char type, int testLength, boolean readTest) {
+  newFile = SD.open("test.txt", FILE_WRITE);
 
+
+  Serial.print("\nTesting: ");
+
+
+  long initTimer = micros();
+  int dataSize;
+
+  switch (type) {
+    case 'L': {
+        long randLong = random();
+        dataSize = sizeof(long);
+        Serial.println((String)"Long (" + dataSize + " Bytes)");
+        for (int i = 0; i < testLength; i++) {
+          newFile.print(randLong);
+        }
+        break;
+      }
+    case 'I': {
+        int randInt = random();
+        dataSize = sizeof(int);
+        Serial.println((String)"Int (" + dataSize + " Bytes)");
+        for (int i = 0; i < testLength; i++) {
+          newFile.print(randInt);
+        }
+
+        break;
+      }
+    case 'C': {
+        char c = 'a';
+        dataSize = sizeof(char);
+        Serial.println((String)"Char (" + dataSize + " Bytes)");
+        for (int i = 0; i < testLength; i++) {
+          newFile.print(c);
+        }
+
+        break;
+      }
+    case 'D': {
+        double randDouble = random();
+        dataSize = sizeof(double);
+        Serial.println((String)"Double (" + dataSize + " Bytes)");
+        for (int i = 0; i < testLength; i++) {
+          newFile.print(randDouble);
+        }
+      }
   }
 
-  return 0;
+
+  long endTimer = micros();
+
+  float diffTimer = endTimer - initTimer;
+  Serial.println((String)"Total # of tests run: " + testLength);
+  Serial.println((String)"Total Data Written: " + ((float)testLength * dataSize) / 1000 + "kb");
+  Serial.println((String)"Total Time for test: " + diffTimer + " uS");
+  Serial.println((String)"Time per individual write: " + (diffTimer / testLength) + " uS");
+  Serial.println((String)"Time per Byte: " + (diffTimer / (testLength * dataSize)) + " uS");
+
+
+  if (newFile) {
+    newFile.close();
+    Serial.println("Written and Closed Succesfully");
+  } else {
+    Serial.println("Can't open file to close it");
+  }
+
+  if (readTest) {
+    if (newFile) {
+      Serial.println("Reading test2.txt:");
+      while (newFile.available()) {
+        Serial.write(newFile.read());
+      }
+      newFile.close();
+    } else {
+      Serial.println("error opening test.txt");
+    }
+  }
+
+  SD.remove("test.txt");
+
+  return diffTimer;
 
 }
 
