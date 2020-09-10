@@ -1,5 +1,5 @@
 // Lewis Hyman - Arduino Write Speed Tester
-double fileVersion = 0.2;
+double fileVersion = 0.3;
 
 #include <SD.h>
 #include <SPI.h>
