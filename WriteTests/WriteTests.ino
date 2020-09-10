@@ -15,6 +15,8 @@ const int chipSelect = BUILTIN_SDCARD; //declare SD socket
 // returns total time for test.
 
 File newFile;
+char serialInput = 0;
+String inputStr = "";
 
 void setup() {
   Serial.begin(9600);
@@ -22,7 +24,7 @@ void setup() {
     ; //wait for serial port
   }
   SDinit();
-  testAll(50);
+  testAll(500);
 
 
 
@@ -57,7 +59,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
 
   Serial.print("\nTesting: ");
 
-  int testLength =-1;
+  int testLength = -1;
   int dataSize = -1;
 
   long initTimer = micros();
@@ -69,7 +71,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
         testLength = writeSize * 1000 / dataSize;
         Serial.println((String)"Long (" + dataSize + " Bytes)");
         for (int i = 0; i < testLength; i++) {
-          newFile.print(randLong);
+          newFile.write(randLong);
         }
         break;
       }
@@ -79,7 +81,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
         testLength = writeSize * 1000 / dataSize;
         Serial.println((String)"Int (" + dataSize + " Bytes)");
         for (int i = 0; i < testLength; i++) {
-          newFile.print(randInt);
+          newFile.write(randInt);
         }
 
         break;
@@ -90,7 +92,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
         testLength = writeSize * 1000 / dataSize;
         Serial.println((String)"Char (" + dataSize + " Bytes)");
         for (int i = 0; i < testLength; i++) {
-          newFile.print(c);
+          newFile.write(c);
         }
 
         break;
@@ -101,7 +103,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
         testLength = writeSize * 1000 / dataSize;
         Serial.println((String)"Double (" + dataSize + " Bytes)");
         for (int i = 0; i < testLength; i++) {
-          newFile.print(randDouble);
+          newFile.write(randDouble);
         }
       }
   }
@@ -109,9 +111,10 @@ long testWrite(char type, int writeSize, boolean readTest) {
   long endTimer = micros();
 
   float diffTimer = endTimer - initTimer;
+  float timePerByte = diffTimer/(testLength*dataSize);
   Serial.println((String)"Total # of tests run: " + testLength + " (" + (double)testLength * dataSize / 1000 + "Kb)");
   Serial.println((String)"Total Time for test: " + diffTimer + " uS / " + diffTimer / 1000 + " mS / " + diffTimer / 1000000 + " S");
-  Serial.println((String)"Time per Write: " + (diffTimer / testLength) + " uS (" + (diffTimer / (testLength * dataSize)) + " uS per byte)");
+  Serial.println((String)"Time per Write: " + (diffTimer / testLength) + " uS (" + timePerByte + " uS per byte /" + + timePerByte*1000 "uS per kb)");
 
 
 
