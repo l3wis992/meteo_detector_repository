@@ -1,11 +1,9 @@
 // Lewis Hyman - Arduino Write Speed Tester
-double fileVersion = 0.3;
+double fileVersion = 0.31;
+const int chipSelect = BUILTIN_SDCARD; //declare SD socket
 
 #include <SD.h>
 #include <SPI.h>
-
-
-const int chipSelect = BUILTIN_SDCARD; //declare SD socket
 
 //methods:
 // testWrite(char 'type', int testLength, bool 'testRead')
@@ -19,19 +17,19 @@ char serialInput = 0;
 String inputStr = "";
 
 void setup() {
+  serialInit();
+  SDinit();
+  testAll(5);
+}
+
+void loop() {
+}
+
+void serialInit() {
   Serial.begin(9600);
   while (!Serial) {
     ; //wait for serial port
   }
-  SDinit();
-  testAll(500);
-
-
-
-
-}
-
-void loop() {
 }
 
 void testAll(int writeSize) {
@@ -64,8 +62,8 @@ long testWrite(char type, int writeSize, boolean readTest) {
 
   long initTimer = micros();
   switch (type) {
-    case 'L': {
 
+    case 'L': {
         long randLong = random();
         dataSize = sizeof(long);
         testLength = writeSize * 1000 / dataSize;
@@ -75,6 +73,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
         }
         break;
       }
+
     case 'I': {
         int randInt = random();
         dataSize = sizeof(int);
@@ -83,9 +82,9 @@ long testWrite(char type, int writeSize, boolean readTest) {
         for (int i = 0; i < testLength; i++) {
           newFile.write(randInt);
         }
-
         break;
       }
+
     case 'C': {
         char c = 'a';
         dataSize = sizeof(char);
@@ -97,6 +96,7 @@ long testWrite(char type, int writeSize, boolean readTest) {
 
         break;
       }
+
     case 'D': {
         double randDouble = random();
         dataSize = sizeof(double);
@@ -111,12 +111,10 @@ long testWrite(char type, int writeSize, boolean readTest) {
   long endTimer = micros();
 
   float diffTimer = endTimer - initTimer;
-  float timePerByte = diffTimer/(testLength*dataSize);
+  float timePerByte = diffTimer / (testLength * dataSize);
   Serial.println((String)"Total # of tests run: " + testLength + " (" + (double)testLength * dataSize / 1000 + "Kb)");
   Serial.println((String)"Total Time for test: " + diffTimer + " uS / " + diffTimer / 1000 + " mS / " + diffTimer / 1000000 + " S");
-  Serial.println((String)"Time per Write: " + (diffTimer / testLength) + " uS (" + timePerByte + " uS per byte /" + + timePerByte*1000 "uS per kb)");
-
-
+  Serial.println((String)"Time per Write: " + (diffTimer / testLength) + " uS (" + timePerByte + " uS per byte /" + + timePerByte * 1000 "uS per kb)");
 
   if (newFile) {
     newFile.close();
@@ -126,15 +124,19 @@ long testWrite(char type, int writeSize, boolean readTest) {
   }
 
   if (readTest) {
-    if (newFile) {
-      Serial.println("Reading test2.txt:");
-      while (newFile.available()) {
-        Serial.write(newFile.read());
+    if (writeSize <= 10) {
+      if (newFile) {
+        Serial.println("Reading test2.txt:");
+        while (newFile.available()) {
+          Serial.write(newFile.read());
+        }
+        newFile.close();
+      } else {
+        Serial.println("error opening test.txt");
+        return -1;
       }
-      newFile.close();
     } else {
-      Serial.println("error opening test.txt");
-      return -1;
+      Serial.print("File too big, please try writeSize of <10");
     }
   }
 
